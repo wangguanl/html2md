@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "build": "node ./index.js"
+  },
   "dependencies": {
     "await-to-js": "^3.0.0",
     "cheerio": "^1.0.0-rc.12",
