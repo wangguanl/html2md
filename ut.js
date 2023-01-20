@@ -1,15 +1,15 @@
 const FS = require('fs'),
   Path = require('path'),
   { statAsync, mkdirAsync, accessAsync } = require('./utils'),
-  { to } = require('await-to-js');
-request = require('request');
+  { to } = require('await-to-js'),
+  request = require('request');
 
 class Ut {
   /**
    * 下载网络图片
    * @param {object} opts
    */
-  static downImg(opts = {}, path, output = './images') {
+  static downImg(opts = {}, { path, output = './images', prefix }) {
     return new Promise(async (resolve, reject) => {
       // 检查输出目录是否存在
       const [statOutputErr] = await to(statAsync(output));
@@ -19,6 +19,8 @@ class Ut {
         path =
           output +
           '/' +
+          prefix +
+          '-' +
           new URL(opts.url).pathname.slice(1).replace(/\//g, '-');
 
         if (!Path.extname(path)) {
