@@ -8,23 +8,20 @@ const FS = require('fs'),
  * 下载网络图片
  * @param {object} opts
  */
-module.exports = function downImg(opts = {}, { output = './images', prefix }) {
-  return new Promise(async (resolve, reject) => {
+const downImg = (opts = {}, { output = './images', prefix }) =>
+  new Promise(async (resolve, reject) => {
     // 检查输出目录是否存在
     const [statOutputErr] = await to(statAsync(output));
     statOutputErr && (await to(mkdirAsync(output)));
 
     let name =
-      output +
-      '/' +
       (prefix ? prefix + '-' : '') +
       new URL(opts.url).pathname.slice(1).replace(/\//g, '-');
 
     if (!Path.extname(name)) {
-      name += '.jpg';
+      name += '.png';
     }
     const path = Path.resolve(output, name);
-
     // 检查文件是否存在
     const [accessPathErr] = await to(accessAsync(path));
     if (!accessPathErr) {
@@ -58,4 +55,12 @@ module.exports = function downImg(opts = {}, { output = './images', prefix }) {
       })
       .on('close', () => {});
   });
-};
+
+/* downImg(
+  {
+    url: `https://mmbiz.qpic.cn/mmbiz_png/JdfjlwvwuTCFNIPLsWue7ZV6NxShjVOez9N4mG9J9KF6nuO7Hf1T7ewSyiaMysib021nP6G5no6J295nELQ0JMRg/640?wx_fmt=png`,
+  },
+  {}
+);
+ */
+module.exports = downImg;
