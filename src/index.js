@@ -1,14 +1,30 @@
-const FS = require('fs'),
-  Path = require('path'),
+const Path = require('path'),
   cheerio = require('cheerio'),
-  TurndownService = require('turndown'),
-  turndownService = new TurndownService(),
+  // TurndownService = require('turndown'), // 无法转换 table 元素
+  // turndownService = new TurndownService(),
   superagent = require('superagent'),
   { to } = require('await-to-js'),
-  Ut = require('./ut'),
+  {
+    writeFileAsync,
+    statAsync,
+    mkdirAsync,
+    rmDirFile,
+  } = require('./utils/node-utils'),
+  downImg = require('./utils/down-img'),
+  html2md = require('./utils/html2md'),
   config = require('./config');
 
 (async () => {
+  const output = Path.resolve(config.output, config.name);
+  // 检查输出目录是否存在
+  const [statOutputErr] = await to(statAsync(output));
+  // 如果存在则清空目录
+  if (!statOutputErr) {
+    await to(rmDirFile(output));
+  }
+  // 创建输出目录
+  await mkdirAsync(output);
+
   const [err, page] = await to(superagent.get(config.url));
   if (err) {
     console.log('页面获取失败');
@@ -17,7 +33,6 @@ const FS = require('fs'),
   const { origin, hostname, pathname } = new URL(config.url);
   const $ = cheerio.load(page.text);
   const domName = config.hosts[hostname] || 'body';
-
   const pathUrl =
     pathname[pathname.length - 1] === '/'
       ? pathname
@@ -33,18 +48,19 @@ const FS = require('fs'),
             $(element).attr('src') || $(element).attr('data-src') || ''
           ).replace(/\\/g, '/');
         const [err, path] = await to(
-          Ut.downImg(
+          downImg(
             { url },
             {
-              prefix: config.name,
+              output: Path.resolve(output, 'images'),
             }
           )
         );
         if (err) {
           reject(err);
         } else {
-          $(element).attr('src', path);
-          resolve(path);
+          $(element).attr('src', path.replace(output, '.'));
+          $(element).attr('data-src', path.replace(output, '.'));
+          resolve();
         }
       });
     })
@@ -52,8 +68,11 @@ const FS = require('fs'),
   $(domName).prepend(
     $(`<a href="${config.url}">转载文章：${$('title').text()}</a>`)
   );
-  FS.writeFileSync(
-    config.name + '.md',
-    turndownService.turndown($(domName).html())
+  await to(
+    writeFileAsync(
+      output + '/' + config.name + '.md',
+      html2md($(domName).html())
+      // turndownService.turndown($(domName).html())
+    )
   );
 })();
