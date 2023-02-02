@@ -12,7 +12,8 @@ const Path = require('path'),
   } = require('./utils/node-utils'),
   downImg = require('./utils/down-img'),
   html2md = require('./utils/html2md'),
-  config = require('./config');
+  config = require('./config'),
+  generateUUID = require('./utils/unique');
 
 (async () => {
   const output = Path.resolve(config.output, config.name);
@@ -42,18 +43,17 @@ const Path = require('path'),
     [...$(`${domName} img`)].map(
       element =>
         new Promise(async (resolve, reject) => {
-          const src =
-            $(element).attr('src') || $(element).attr('data-src') || '';
-          let url = src;
+          let url = $(element).attr('src') || $(element).attr('data-src') || '';
           // 不是以http开头，而是使用的相对路径
-          if (!/(http|https):\/\/([\w.]+\/?)\S*/.test(src)) {
-            url = origin + Path.join(pathUrl, src).replace(/\\/g, '/');
+          if (!/(http|https):\/\/([\w.]+\/?)\S*/.test(url)) {
+            url = origin + Path.join(pathUrl, url).replace(/\\/g, '/');
           }
           const [err, path] = await to(
             downImg(
               { url },
               {
                 output: Path.resolve(output, 'images'),
+                filename: generateUUID(),
               }
             )
           );
@@ -68,7 +68,7 @@ const Path = require('path'),
     )
   );
   $(domName).prepend(
-    $(`<a href="${config.url}">转载文章：${$('title').text()}</a>`)
+    $(`<a href="${config.url}">转载文章：${$('title').text()}</a><br />`)
   );
   await to(
     writeFileAsync(

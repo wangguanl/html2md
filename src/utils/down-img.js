@@ -8,15 +8,16 @@ const FS = require('fs'),
  * 下载网络图片
  * @param {object} opts
  */
-const downImg = (opts = {}, { output = './images', prefix }) =>
+const downImg = (opts = {}, { output = './images', prefix, filename }) =>
   new Promise(async (resolve, reject) => {
     // 检查输出目录是否存在
     const [statOutputErr] = await to(statAsync(output));
     statOutputErr && (await to(mkdirAsync(output)));
 
     let name =
+      filename ||
       (prefix ? prefix + '-' : '') +
-      new URL(opts.url).pathname.slice(1).replace(/\//g, '-');
+        new URL(opts.url).pathname.slice(1).replace(/\//g, '-');
 
     if (!Path.extname(name)) {
       name += '.png';
