@@ -72,7 +72,7 @@ const Path = require('path'),
   );
   await to(
     writeFileAsync(
-      output + '/' + config.name + '.md',
+      output + '/index.md',
       html2md($(domName).html())
       // turndownService.turndown($(domName).html())
     )
