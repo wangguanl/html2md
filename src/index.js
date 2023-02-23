@@ -12,10 +12,9 @@ const Path = require('path'),
   } = require('./utils/node-utils'),
   downImg = require('./utils/down-img'),
   html2md = require('./utils/html2md'),
-  config = require('./config'),
   generateUUID = require('./utils/unique');
 
-(async () => {
+module.exports = async config => {
   const output = Path.resolve(config.output, config.name);
   // 检查输出目录是否存在
   const [statOutputErr] = await to(statAsync(output));
@@ -77,4 +76,4 @@ const Path = require('path'),
       // turndownService.turndown($(domName).html())
     )
   );
-})();
+};
