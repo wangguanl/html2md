@@ -1,7 +1,7 @@
 const Path = require('path'),
   cheerio = require('cheerio'),
-  // TurndownService = require('turndown'), // 无法转换 table 元素
-  // turndownService = new TurndownService(),
+  TurndownService = require('turndown'), // 无法转换 table 元素
+  turndownService = new TurndownService(),
   superagent = require('superagent'),
   { to } = require('await-to-js'),
   {
@@ -12,8 +12,8 @@ const Path = require('path'),
   } = require('./utils/node-utils'),
   downImg = require('./utils/down-img'),
   html2md = require('./utils/html2md'),
-  generateUUID = require('./utils/unique');
-
+  { unique } = require('wgl-utils/main.cjs'),
+  getLocalIP = require('./utils/getLocalIP');
 module.exports = async config => {
   const output = Path.resolve(config.output, config.name);
   // 检查输出目录是否存在
@@ -52,7 +52,7 @@ module.exports = async config => {
               { url },
               {
                 output: Path.resolve(output, 'images'),
-                filename: generateUUID(),
+                filename: unique(),
               }
             )
           );
@@ -66,9 +66,12 @@ module.exports = async config => {
         })
     )
   );
-  $(domName).prepend(
-    $(`<a href="${config.url}">转载文章：${$('title').text()}</a><br />`)
-  );
+  // 如果不是本地部署
+  if (!['localhost', '127.0.0.1', getLocalIP()].includes(hostname)) {
+    $(domName).prepend(
+      $(`<a href="${config.url}">转载文章：${$('title').text()}</a><br />`)
+    );
+  }
   await to(
     writeFileAsync(
       output + '/index.md',

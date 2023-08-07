@@ -1,8 +1,8 @@
 const Path = require('path');
 const turndown = require('../src');
 const config = {
-  url: 'https://blog.csdn.net/weixin_44935956/article/details/126317933',
-  name: 'nvm-windows安装和配置',
+  url: 'http://localhost:8080/%E4%B8%89%E8%A8%80%E4%B8%A4%E8%AF%AD%E8%AF%B4%E9%80%8F%E6%9F%AF%E9%87%8C%E5%8C%96%E5%92%8C%E5%8F%8D%E6%9F%AF%E9%87%8C%E5%8C%96.html',
+  name: '柯里化和反柯里化',
   // url: 'http://localhost:8080',
   // name: 'index',
   output: Path.resolve(process.cwd(), 'dist'),
@@ -14,7 +14,7 @@ const config = {
     'mp.weixin.qq.com': '#js_content > .js_darkmode__0',
     'mp.weixin.qq.com': '#js_content',
     // '172.31.209.98': '#js_content > .js_darkmode__0',
-    // localhost: '#js_content > .js_darkmode__0',
+    localhost: '#js_content',
   },
 };
 
