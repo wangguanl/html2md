@@ -9,13 +9,20 @@ const Path = require('path'),
     statAsync,
     mkdirAsync,
     rmDirFile,
+    readFileAsync,
   } = require('./utils/node-utils'),
   downImg = require('./utils/down-img'),
   html2md = require('./utils/html2md'),
-  { unique } = require('wgl-utils/main.cjs'),
-  getLocalIP = require('./utils/getLocalIP');
+  { unique } = require('wgl-utils/main.cjs');
+
 module.exports = async config => {
   const output = Path.resolve(config.output, config.name);
+  // 检查输出目录是否存在
+  const [statConfigOutputErr] = await to(statAsync(config.output));
+  // 如果不存在则创建
+  if (statConfigOutputErr) {
+    await to(mkdirAsync(config.output));
+  }
   // 检查输出目录是否存在
   const [statOutputErr] = await to(statAsync(output));
   // 如果存在则清空目录
@@ -23,55 +30,95 @@ module.exports = async config => {
     await to(rmDirFile(output));
   }
   // 创建输出目录
-  await mkdirAsync(output);
+  await to(mkdirAsync(output));
 
-  const [err, page] = await to(superagent.get(config.url));
-  if (err) {
-    console.log('页面获取失败');
-    console.log(err);
-    return;
+  let $,
+    origin,
+    hostname,
+    pathname,
+    pathUrl = '/';
+  if (/^(http|https):/.test(config.url)) {
+    const [err, page] = await to(superagent.get(config.url));
+    if (!err) {
+      $ = cheerio.load(page.text);
+      const urlObj = new URL(config.url);
+      origin = urlObj.origin;
+      hostname = urlObj.hostname;
+      pathname = urlObj.pathname;
+      pathUrl =
+        pathname[pathname.length - 1] === '/'
+          ? pathname
+          : pathname.slice(0, pathname.lastIndexOf('/') + 1);
+      $(domName).prepend(
+        $(`<a href="${config.url}">转载文章：${$('title').text()}</a><br />`)
+      );
+    } else {
+      console.log('页面获取失败');
+      console.log(err);
+    }
+  } else {
+    const [err, data] = await to(readFileAsync(config.url));
+    if (!err) {
+      $ = cheerio.load(data.toString());
+      origin = Path.dirname(config.url);
+      hostname = 'localhost';
+    } else {
+      console.log('页面获取失败');
+      console.log(err);
+    }
   }
-  const { origin, hostname, pathname } = new URL(config.url);
-  const $ = cheerio.load(page.text);
   const domName = config.hosts[hostname] || 'body';
-  const pathUrl =
-    pathname[pathname.length - 1] === '/'
-      ? pathname
-      : pathname.slice(0, pathname.lastIndexOf('/') + 1);
   await Promise.allSettled(
     [...$(`${domName} img`)].map(
       element =>
         new Promise(async (resolve, reject) => {
           let url = $(element).attr('src') || $(element).attr('data-src') || '';
-          // 不是以http开头，而是使用的相对路径
-          if (!/(http|https):\/\/([\w.]+\/?)\S*/.test(url)) {
+          // /(http|https):\/\/([\w.]+\/?)\S*/.
+          // 是使用的相对路径
+          if (!/^(http|https|data|blob):/.test(url)) {
             url = origin + Path.join(pathUrl, url).replace(/\\/g, '/');
           }
-          const [err, path] = await to(
-            downImg(
-              { url },
-              {
-                output: Path.resolve(output, 'images'),
-                filename: unique(),
+          const filename = unique() + '.png', // 图片名称
+            fileOutput = Path.resolve(output, 'images'), // 图片存储路径
+            path = Path.resolve(fileOutput, filename); // 图片完整路径
+          // 检查输出目录是否存在
+          const [statOutputErr] = await to(statAsync(fileOutput));
+          statOutputErr && (await to(mkdirAsync(fileOutput)));
+
+          if (/^(http|https):\/\//.test(url)) {
+            const [err] = await to(
+              downImg(
+                { url: encodeURI(url) },
+                {
+                  output: Path.resolve(output, 'images'),
+                  filename,
+                }
+              )
+            );
+            if (err) {
+              reject(err);
+            }
+            // 不处理data或blob数据，本地图片
+          } else if (!/^(data|blob):/.test(url)) {
+            const [err, data] = await to(readFileAsync(url));
+            if (!err) {
+              const [writeErr] = await to(writeFileAsync(path, data));
+              if (writeErr) {
+                console.log('写入文件失败', writeErr);
+                reject(writeErr);
               }
-            )
-          );
-          if (err) {
-            reject(err);
-          } else {
-            $(element).attr('src', path.replace(output, '.'));
-            $(element).attr('data-src', path.replace(output, '.'));
-            resolve();
+            } else {
+              console.log('读取文件失败', err);
+              reject(err);
+            }
           }
+          $(element).attr('src', path.replace(output, '.'));
+          $(element).attr('data-src', path.replace(output, '.'));
+          resolve();
         })
     )
   );
-  // 如果不是本地部署
-  if (!['localhost', '127.0.0.1', getLocalIP()].includes(hostname)) {
-    $(domName).prepend(
-      $(`<a href="${config.url}">转载文章：${$('title').text()}</a><br />`)
-    );
-  }
+
   await to(
     writeFileAsync(
       output + '/index.md',

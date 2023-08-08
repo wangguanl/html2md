@@ -1,8 +1,10 @@
 const Path = require('path');
 const turndown = require('../src');
 const config = {
-  url: 'http://localhost:8080/%E4%B8%89%E8%A8%80%E4%B8%A4%E8%AF%AD%E8%AF%B4%E9%80%8F%E6%9F%AF%E9%87%8C%E5%8C%96%E5%92%8C%E5%8F%8D%E6%9F%AF%E9%87%8C%E5%8C%96.html',
-  name: '柯里化和反柯里化',
+  url: 'C:/Users/Administrator/Desktop/workspace/blog-page/北京桨板 8.13日 周日 昆玉河桨板（地铁直达）.html',
+  name: '北京桨板',
+  // url: 'http://localhost:8080/%E5%89%8D%E7%AB%AF%E7%AE%80%E6%B4%81%E6%9E%B6%E6%9E%84.html',
+  // name: '前端简洁架构',
   // url: 'http://localhost:8080',
   // name: 'index',
   output: Path.resolve(process.cwd(), 'dist'),
