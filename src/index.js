@@ -122,8 +122,8 @@ module.exports = async config => {
   await to(
     writeFileAsync(
       output + '/index.md',
-      html2md($(domName).html())
-      // turndownService.turndown($(domName).html())
+      // html2md($(domName).html())
+      turndownService.turndown($(domName).html())
     )
   );
 };

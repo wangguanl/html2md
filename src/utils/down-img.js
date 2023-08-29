@@ -1,6 +1,6 @@
 const FS = require('fs'),
   Path = require('path'),
-  { statAsync, mkdirAsync, accessAsync } = require('./node-utils'),
+  { statAsync, mkdirAsync, accessAsync } = require('wgl-node-utils'),
   { to } = require('await-to-js'),
   request = require('request');
 
