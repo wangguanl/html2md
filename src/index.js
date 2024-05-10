@@ -10,7 +10,7 @@ const Path = require('path'),
     mkdirAsync,
     rmDirFile,
     readFileAsync,
-  } = require('./utils/node-utils'),
+  } = require('wgl-node-utils'),
   downImg = require('./utils/down-img'),
   html2md = require('./utils/html2md'),
   { unique } = require('wgl-utils/main.cjs');
@@ -37,6 +37,7 @@ module.exports = async config => {
     hostname,
     pathname,
     pathUrl = '/';
+  let domName = 'body';
   if (/^(http|https):/.test(config.url)) {
     const [err, page] = await to(superagent.get(config.url));
     if (!err) {
@@ -49,6 +50,7 @@ module.exports = async config => {
         pathname[pathname.length - 1] === '/'
           ? pathname
           : pathname.slice(0, pathname.lastIndexOf('/') + 1);
+      domName = config.hosts[hostname];
       $(domName).prepend(
         $(`<a href="${config.url}">转载文章：${$('title').text()}</a><br />`)
       );
@@ -62,12 +64,12 @@ module.exports = async config => {
       $ = cheerio.load(data.toString());
       origin = Path.dirname(config.url);
       hostname = 'localhost';
+      domName = config.hosts[hostname];
     } else {
       console.log('页面获取失败');
       console.log(err);
     }
   }
-  const domName = config.hosts[hostname] || 'body';
   await Promise.allSettled(
     [...$(`${domName} img`)].map(
       element =>
